@@ -4,10 +4,7 @@
 include <common.scad>
 
 module bezel_right() {
-    intersection() {
-        front_bezel_full();
-        miter_region_right();
-    }
+    bezel_side("right");
 }
 
 bezel_right();

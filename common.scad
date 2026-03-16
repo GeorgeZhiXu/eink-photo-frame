@@ -30,16 +30,16 @@ battery_d = 8;
 
 /* [Frame Parameters] */
 bezel_w    = 13.5;        // total visible bezel width (uniform, fits largest lip)
-wall_thick = 2.4;         // front frame thickness
+wall_thick = 1.2;         // front frame thickness
 back_thick = 1.2;         // back panel thickness (6 layers @ 0.2mm)
-cavity_tol = 0.55;        // clearance above display in cavity
+cavity_tol = 0.85;        // clearance above display in cavity
 frame_d    = back_thick + display_d + cavity_tol;  // 2.6mm
 tol        = 0.2;         // glass to cavity clearance
 corner_r   = 3;
 
 /* [Channel Parameters] */
 outer_wall     = 2.0;     // outer wall thickness on bezel
-inner_lip_d    = 0.3;     // inner lip depth (presses on display)
+inner_lip_d    = 0.6;     // inner lip depth (presses on display)
 channel_tol    = 0.2;     // clearance for back panel in channel
 visible_border = 1.0;     // gap between bezel inner edge and active display area
 
@@ -88,8 +88,6 @@ panel_rim   = channel_w - 2 * channel_tol;           // side/top rim
 channel_w_bot = bezel_w - outer_wall - lip_bottom;   // bottom channel
 bottom_rim    = channel_w_bot - 2 * channel_tol;     // bottom rim
 
-inner_lip_w = lip_overlap;    // side/top lip width (2.0mm)
-
 // Frame and cavity dimensions (uniform bezel_w on all sides)
 cavity_w = glass_w + 2 * tol;
 cavity_h = glass_h + 2 * tol;
@@ -136,6 +134,12 @@ module tongue_strip(width, y_pos, z_pos, depth, length, count) {
 
 // ============================================================
 // Front bezel - mitered picture frame style (4 sides)
+//
+// Subtractive approach: start with solid frame, carve out:
+//   1. Window opening (through the bezel face)
+//   2. Channels (per-side, for back panel rims to snap in)
+//   3. Lip recess (cavity for display glass, leaving 0.3mm lip)
+//   4. Miter cut (45° to isolate one side)
 // ============================================================
 
 // Window position and size (bezel_w is uniform on all sides)
@@ -144,76 +148,88 @@ win_y = bezel_w;
 win_w = glass_w - 2 * lip_overlap;
 win_h = glass_h - lip_overlap - lip_bottom;
 
-// Bezel Z layout:
-//   z=0                           bottom of outer wall (back of frame)
-//   z=frame_d                     bezel body bottom (= back panel top)
-//   z=frame_d+wall_thick          bezel front face
+// Per-side lip and channel widths
+function lip_for(side) =
+    (side == "bottom") ? lip_bottom : lip_overlap;
 
-module front_bezel_full() {
-    union() {
-        // 1. Bezel body (visible frame, sits on top of back panel)
+function channel_for(side) =
+    bezel_w - outer_wall - lip_for(side);
+
+// ============================================================
+// bezel_side(side) - builds one mitered bezel piece
+//
+// Cross-section per side (outer edge inward):
+//   outer_wall (2mm) | channel (rim + tol) | lip (on display)
+// ============================================================
+
+module bezel_side(side) {
+    ch_l = channel_for("left");
+    ch_r = channel_for("right");
+    ch_t = channel_for("top");
+    ch_b = channel_for("bottom");
+
+    intersection() {
         difference() {
-            translate([0, 0, frame_d])
-                rounded_rect(frame_w, frame_h, wall_thick, corner_r);
+            // Solid frame: outer wall full height, bezel face on top
+            union() {
+                rounded_rect(frame_w, frame_h, frame_d, corner_r);
+                translate([0, 0, frame_d])
+                    rounded_rect(frame_w, frame_h, wall_thick, corner_r);
+            }
 
-            // Window opening - sharp corners (display glass is rectangular)
+            // 1. Window opening
             translate([win_x, win_y, -0.1])
                 cube([win_w, win_h, frame_d + wall_thick + 0.2]);
-        }
 
-        // 2. Outer wall (wraps around back panel edge)
-        difference() {
-            rounded_rect(frame_w, frame_h, frame_d + wall_thick, corner_r);
-
-            // Hollow inside - sharp corners
+            // 2. Channels: carve per-side channel slots (full frame_d depth)
+            //    Bottom channel
             translate([outer_wall, outer_wall, -0.1])
+                cube([frame_w - 2 * outer_wall, ch_b, frame_d + 0.2]);
+            //    Top channel
+            translate([outer_wall, frame_h - outer_wall - ch_t, -0.1])
+                cube([frame_w - 2 * outer_wall, ch_t, frame_d + 0.2]);
+            //    Left channel
+            translate([outer_wall, outer_wall, -0.1])
+                cube([ch_l, frame_h - 2 * outer_wall, frame_d + 0.2]);
+            //    Right channel
+            translate([frame_w - outer_wall - ch_r, outer_wall, -0.1])
+                cube([ch_r, frame_h - 2 * outer_wall, frame_d + 0.2]);
+
+            // 3. Lip recess: carve cavity under the lip zone
+            //    Everything inside the channels but outside the window,
+            //    from z=0 up to frame_d - inner_lip_d (leaving 0.3mm lip)
+            translate([outer_wall + ch_l, outer_wall + ch_b, -0.1])
                 cube([
-                    frame_w - 2 * outer_wall,
-                    frame_h - 2 * outer_wall,
-                    frame_d + wall_thick + 0.2
+                    frame_w - 2 * outer_wall - ch_l - ch_r,
+                    frame_h - 2 * outer_wall - ch_b - ch_t,
+                    frame_d - inner_lip_d + 0.1
                 ]);
         }
 
-        // 3. Inner lip (presses on display glass)
-        difference() {
-            translate([win_x - inner_lip_w, win_y - inner_lip_w, frame_d - inner_lip_d])
-                cube([win_w + 2 * inner_lip_w, win_h + 2 * inner_lip_w, inner_lip_d]);
-
-            translate([win_x, win_y, frame_d - inner_lip_d - 0.1])
-                cube([win_w, win_h, inner_lip_d + 0.2]);
-        }
+        // 4. Miter cut
+        _miter_region(side);
     }
 }
 
-// 45-degree miter cutting regions for each side
-// Each region is a 2D polygon extruded tall enough to cut the bezel
-e = 1; // margin for clean cuts
+// 45-degree miter cutting regions
+e = 1;
 
-// Bottom: below both 45° lines from bottom corners
-module miter_region_bottom() {
-    linear_extrude(50, center = true)
-        polygon([[-e, -e], [frame_w + e, -e], [frame_w / 2, frame_w / 2]]);
-}
-
-// Top: above both 45° lines from top corners
-module miter_region_top() {
-    linear_extrude(50, center = true)
-        polygon([[-e, frame_h + e], [frame_w + e, frame_h + e],
-                 [frame_w / 2, frame_h - frame_w / 2]]);
-}
-
-// Left: between 45° lines from both left corners
-module miter_region_left() {
-    linear_extrude(50, center = true)
-        polygon([[-e, -e], [frame_h / 2, frame_h / 2], [-e, frame_h + e]]);
-}
-
-// Right: between 45° lines from both right corners
-module miter_region_right() {
-    linear_extrude(50, center = true)
-        polygon([[frame_w + e, -e],
-                 [frame_w - frame_h / 2, frame_h / 2],
-                 [frame_w + e, frame_h + e]]);
+module _miter_region(side) {
+    if (side == "bottom")
+        linear_extrude(50, center = true)
+            polygon([[-e, -e], [frame_w + e, -e], [frame_w / 2, frame_w / 2]]);
+    else if (side == "top")
+        linear_extrude(50, center = true)
+            polygon([[-e, frame_h + e], [frame_w + e, frame_h + e],
+                     [frame_w / 2, frame_h - frame_w / 2]]);
+    else if (side == "left")
+        linear_extrude(50, center = true)
+            polygon([[-e, -e], [frame_h / 2, frame_h / 2], [-e, frame_h + e]]);
+    else // right
+        linear_extrude(50, center = true)
+            polygon([[frame_w + e, -e],
+                     [frame_w - frame_h / 2, frame_h / 2],
+                     [frame_w + e, frame_h + e]]);
 }
 
 // Full back panel (smaller than bezel, fits inside channel)

@@ -4,10 +4,7 @@
 include <common.scad>
 
 module bezel_top() {
-    intersection() {
-        front_bezel_full();
-        miter_region_top();
-    }
+    bezel_side("top");
 }
 
 bezel_top();
