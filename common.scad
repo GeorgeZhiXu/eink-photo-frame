@@ -29,18 +29,22 @@ battery_h = 35;
 battery_d = 8;
 
 /* [Frame Parameters] */
-bezel_w    = 10;          // bezel width around active area
+bezel_w    = 13.5;        // total visible bezel width (uniform, fits largest lip)
 wall_thick = 2.4;         // front frame thickness
 back_thick = 1.2;         // back panel thickness (6 layers @ 0.2mm)
-frame_d    = 2.6;         // total frame depth (1.2mm back + 1.4mm cavity)
-tol        = 0.2;
+cavity_tol = 0.55;        // clearance above display in cavity
+frame_d    = back_thick + display_d + cavity_tol;  // 2.6mm
+tol        = 0.2;         // glass to cavity clearance
 corner_r   = 3;
 
 /* [Channel Parameters] */
-outer_wall  = 2.0;        // outer wall thickness on bezel
-inner_lip_d = 0.3;        // inner lip depth (presses on display)
-channel_tol = 0.2;        // clearance for back panel in channel
-lip_overlap = 2.0;        // how much bezel overlaps the glass on each side
+outer_wall     = 2.0;     // outer wall thickness on bezel
+inner_lip_d    = 0.3;     // inner lip depth (presses on display)
+channel_tol    = 0.2;     // clearance for back panel in channel
+visible_border = 1.0;     // gap between bezel inner edge and active display area
+
+// Lip: part of bezel that overlaps and presses on display glass
+lip_overlap = min(border_left, border_right, border_top) - visible_border;
 
 /* [Printer Limits] */
 bed_max = 260;
@@ -71,24 +75,31 @@ screw_r       = 1.5;       // M3 screw radius
 // Derived dimensions
 // ============================================================
 
+// Per-side lip (derived from borders)
+// Use the largest border to set bezel_w, so all sides are uniform
+lip_bottom = border_bottom - visible_border;         // 10.3mm (largest)
+
+// Bezel layout: outer_wall + 2*channel_tol + rim + lip = bezel_w
+// All sides use the same bezel_w (set to fit the largest lip)
+// Side/top channel is wider (more rim), bottom channel is narrower
+channel_w   = bezel_w - outer_wall - lip_overlap;    // side/top channel
+panel_rim   = channel_w - 2 * channel_tol;           // side/top rim
+
+channel_w_bot = bezel_w - outer_wall - lip_bottom;   // bottom channel
+bottom_rim    = channel_w_bot - 2 * channel_tol;     // bottom rim
+
+inner_lip_w = lip_overlap;    // side/top lip width (2.0mm)
+
+// Frame and cavity dimensions (uniform bezel_w on all sides)
 cavity_w = glass_w + 2 * tol;
 cavity_h = glass_h + 2 * tol;
-
-frame_w = cavity_w + 2 * bezel_w;
-frame_h = cavity_h + 2 * bezel_w;
-
-// Back panel rim widths (design parameters)
-panel_rim  = 8.2;    // rim on left, right, top
-bottom_rim = 0.8;    // thin bottom rim (hidden in base)
+frame_w  = glass_w - 2 * lip_overlap + 2 * bezel_w;
+frame_h  = glass_h - lip_overlap - lip_bottom + 2 * bezel_w;
 
 // Derived panel dimensions
 panel_w = cavity_w + 2 * panel_rim;
 panel_h = cavity_h + panel_rim + bottom_rim;
-panel_inset = (frame_w - panel_w) / 2;  // how far panel is inset from bezel edge
-
-// Inner lip width: derived to fill gap between panel rim and window
-// Layout: outer_wall + channel_tol + panel_rim + channel_tol + inner_lip_w = win_x
-inner_lip_w = bezel_w + tol + lip_overlap - outer_wall - panel_rim - 2 * channel_tol;
+panel_inset = (frame_w - panel_w) / 2;
 
 // Back panel split: bottom piece as tall as fits the bed
 back_split_y = bed_max - 10;   // 250mm from bottom, top piece ~60mm
@@ -127,11 +138,11 @@ module tongue_strip(width, y_pos, z_pos, depth, length, count) {
 // Front bezel - mitered picture frame style (4 sides)
 // ============================================================
 
-// Window position and size (derived from glass position + lip overlap)
-win_x = bezel_w + tol + lip_overlap;
-win_y = bezel_w + tol + lip_overlap;
+// Window position and size (bezel_w is uniform on all sides)
+win_x = bezel_w;
+win_y = bezel_w;
 win_w = glass_w - 2 * lip_overlap;
-win_h = glass_h - 2 * lip_overlap;
+win_h = glass_h - lip_overlap - lip_bottom;
 
 // Bezel Z layout:
 //   z=0                           bottom of outer wall (back of frame)
