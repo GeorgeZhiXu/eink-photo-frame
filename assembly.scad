@@ -18,7 +18,7 @@ color("DimGray")
 // Bottom bezel (frame_w wide) centered on panel
 // X offset: -(frame_w - panel_w) / 2 = -panel_inset
 color("Gold")
-    translate([-panel_inset, _slot_w * cos(stand_angle), 0])
+    translate([-panel_inset, 0, 0])
         rotate([90 - stand_angle, 0, 0])
             bezel_bottom();
 
