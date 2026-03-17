@@ -178,31 +178,25 @@ module bezel_side(side) {
             }
 
             // 1. Window opening
-            translate([win_x, win_y, -0.1])
-                cube([win_w, win_h, frame_d + wall_thick + 0.2]);
+            translate([win_x, win_y, 0])
+                cube([win_w, win_h, frame_d + wall_thick]);
 
             // 2. Channels: carve per-side channel slots (full frame_d depth)
-            //    Bottom channel
-            translate([outer_wall, outer_wall, -0.1])
-                cube([frame_w - 2 * outer_wall, ch_b, frame_d + 0.2]);
-            //    Top channel
-            translate([outer_wall, frame_h - outer_wall - ch_t, -0.1])
-                cube([frame_w - 2 * outer_wall, ch_t, frame_d + 0.2]);
-            //    Left channel
-            translate([outer_wall, outer_wall, -0.1])
-                cube([ch_l, frame_h - 2 * outer_wall, frame_d + 0.2]);
-            //    Right channel
-            translate([frame_w - outer_wall - ch_r, outer_wall, -0.1])
-                cube([ch_r, frame_h - 2 * outer_wall, frame_d + 0.2]);
+            translate([outer_wall, outer_wall, 0])
+                cube([frame_w - 2 * outer_wall, ch_b, frame_d]);
+            translate([outer_wall, frame_h - outer_wall - ch_t, 0])
+                cube([frame_w - 2 * outer_wall, ch_t, frame_d]);
+            translate([outer_wall, outer_wall, 0])
+                cube([ch_l, frame_h - 2 * outer_wall, frame_d]);
+            translate([frame_w - outer_wall - ch_r, outer_wall, 0])
+                cube([ch_r, frame_h - 2 * outer_wall, frame_d]);
 
-            // 3. Lip recess: carve cavity under the lip zone
-            //    Everything inside the channels but outside the window,
-            //    from z=0 up to frame_d - inner_lip_d (leaving 0.3mm lip)
-            translate([outer_wall + ch_l, outer_wall + ch_b, -0.1])
+            // 3. Lip recess: cavity under the lip zone, leaving inner_lip_d
+            translate([outer_wall + ch_l, outer_wall + ch_b, 0])
                 cube([
                     frame_w - 2 * outer_wall - ch_l - ch_r,
                     frame_h - 2 * outer_wall - ch_b - ch_t,
-                    frame_d - inner_lip_d + 0.1
+                    frame_d - inner_lip_d
                 ]);
         }
 
@@ -234,24 +228,23 @@ module _miter_region(side) {
 
 // Full back panel (smaller than bezel, fits inside channel)
 module back_panel_full() {
-    // FPC slot X position: centered + offset to the right
     fpc_x = (panel_w - fpc_slot_w) / 2 + fpc_offset_x;
+    fpc_gap = 4;
+    e = 0.01;  // epsilon for clean boolean cuts through boundary faces
 
     difference() {
         rounded_rect(panel_w, panel_h, frame_d, max(corner_r - panel_inset, 0.5));
 
-        // Display cavity
+        // Display cavity (cuts through top face at z=frame_d)
         translate([panel_rim, bottom_rim, back_thick])
-            cube([cavity_w, cavity_h, frame_d]);
+            cube([cavity_w, cavity_h, frame_d - back_thick + e]);
 
-        // FPC cable exit slot at bottom (offset 2mm to right)
-        translate([fpc_x, -0.1, back_thick])
-            cube([fpc_slot_w, bottom_rim + 0.1, frame_d - back_thick + 0.1]);
+        // FPC cable exit slot (cuts through bottom edge at y=0 and top at z=frame_d)
+        translate([fpc_x, -e, back_thick])
+            cube([fpc_slot_w, bottom_rim + e, frame_d - back_thick + e]);
 
-        // FPC ribbon gap: 4mm zone from panel bottom edge
-        // Goes through the full back wall so ribbon can fold freely
-        fpc_gap = 4;
-        translate([fpc_x, 0, -0.1])
-            cube([fpc_slot_w, fpc_gap, frame_d + 0.1]);
+        // FPC ribbon gap (cuts through bottom edge at y=0 and bottom face at z=0)
+        translate([fpc_x, -e, -e])
+            cube([fpc_slot_w, fpc_gap + e, frame_d + 2 * e]);
     }
 }
