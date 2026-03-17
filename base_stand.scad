@@ -48,8 +48,8 @@ module base_stand() {
     switch_z = board_surface_z - 3.0;    // switch center: 3.0mm below board surface
 
     // USB-C port (rounded rectangle / stadium shape)
-    usb_port_w = 8.94 + 0.4;   // standard + clearance
-    usb_port_h = 3.26 + 0.4;   // standard + clearance
+    usb_port_w = 8.94 + 0.8;   // standard + clearance
+    usb_port_h = 3.26 + 0.8;   // standard + clearance
     usb_port_r = usb_port_h / 2 - 0.01; // nearly fully rounded (avoid zero-height collapse)
 
     // Switch: 1.6mm square dial that slides between off and on positions
@@ -85,7 +85,7 @@ module base_stand() {
 
         // 4. Button holes (back wall) - btn1, btn2, btn3, reset
         // Actual buttons are 2.4mm round + clearance
-        btn_hole_d = 2.4 + 0.4;
+        btn_hole_d = 2.4 + 0.8;
         button_xs = [btn1_x, btn2_x, btn3_x, reset_x];
         for (bx = button_xs) {
             translate([board_x + bx, stand_foot_depth - base_wall, btn_z])
