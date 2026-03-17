@@ -18,10 +18,21 @@ border_top    = 3.0;
 border_bottom = 11.3;   // 284.7 - 270.4 - 3 = 11.3, FPC side, large non-active area
 
 /* [Driver Board Parameters] */
-board_w = 80;
-board_h = 40;
+board_w = 80.2;           // measured
+board_h = 41.2;           // measured
 board_d = 1.6;
 board_clearance = 10;     // component height clearance
+// Hole positions
+board_hole_dia = 2.4;
+board_hole_edge_x = 2.4;                 // measured: actual hole center to board edge
+board_hole_edge_y = 2.4;                 // measured: actual hole center to board edge
+board_hole_h = 75;        // horizontal hole spacing
+board_hole_v = 36;        // vertical hole spacing
+// Board X offset: left edge is 1mm left of display left edge
+board_offset_x = 1.0;
+// Protrusions from board edge (buttons/USB-C/switch on back edge)
+usb_c_protrusion = 1.5;   // USB-C sticks out from board edge
+button_protrusion = 1.0;   // buttons stick out from board edge
 
 /* [Battery Parameters] */
 battery_w = 60;
@@ -51,7 +62,7 @@ bed_max = 260;
 
 /* [Stand Parameters] */
 stand_angle = 12;         // tilt angle in degrees
-stand_foot_depth = 100;   // how far the base extends back
+stand_foot_depth = 58.6;  // board edge + 0.2mm clearance to back wall interior
 
 /* [FPC Cable] */
 // 60-pin FPC exits from bottom of display, offset 2mm to the right
@@ -103,7 +114,7 @@ panel_inset = (frame_w - panel_w) / 2;
 back_split_y = bed_max - 10;   // 250mm from bottom, top piece ~60mm
 
 // Base dimensions (foot/stand only, attaches to bottom of back panel)
-base_wall = wall_thick;
+base_wall = outer_wall;   // match bezel outer wall so they fuse at front
 base_total_depth = stand_foot_depth;
 
 // ============================================================

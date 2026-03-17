@@ -8,11 +8,14 @@ use <base_stand.scad>
 use <bezel_bottom.scad>
 
 _slot_w = frame_d + wall_thick;
+_left_ext = board_offset_x + tol;  // base is wider on left by this amount
 
-// Base (cavity_w wide) centered under panel
-// X offset: (panel_w - cavity_w) / 2 = panel_rim
+// Base centered under panel (accounting for asymmetric left extension)
+// Cavity in base starts at _left_ext from base left edge
+// Panel cavity starts at panel_rim from panel left edge
+// So base left edge = panel_rim - _left_ext
 color("DimGray")
-    translate([panel_rim, 0, 0])
+    translate([panel_rim - _left_ext, 0, 0])
         base_stand();
 
 // Bottom bezel (frame_w wide) centered on panel
@@ -22,8 +25,3 @@ color("Gold")
         rotate([90 - stand_angle, 0, 0])
             bezel_bottom();
 
-// Ghost back panel (panel_w wide) at X=0
-_panel_y = (_slot_w - frame_d) * cos(stand_angle) + channel_tol;
-%translate([0, _panel_y, 0])
-    rotate([-stand_angle, 0, 0])
-        cube([panel_w, frame_d, 280]);
