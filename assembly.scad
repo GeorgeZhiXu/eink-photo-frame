@@ -5,7 +5,10 @@
 // ============================================================
 include <common.scad>
 use <base_stand.scad>
+use <bezel_top.scad>
 use <bezel_bottom.scad>
+use <bezel_left.scad>
+use <bezel_right.scad>
 
 _slot_w = frame_d + wall_thick;
 _left_ext = board_offset_x + tol;  // base is wider on left by this amount
@@ -15,13 +18,16 @@ _left_ext = board_offset_x + tol;  // base is wider on left by this amount
 // Panel cavity starts at panel_rim from panel left edge
 // So base left edge = panel_rim - _left_ext
 color("DimGray")
-    translate([panel_rim - _left_ext, 0, 0])
+//    translate([panel_rim - _left_ext, 0, 0])
         base_stand();
 
 // Bottom bezel (frame_w wide) centered on panel
 // X offset: -(frame_w - panel_w) / 2 = -panel_inset
 color("Gold")
-    translate([-panel_inset, 0, 0])
-        rotate([90 - stand_angle, 0, 0])
-            bezel_bottom();
+//    translate([-panel_inset, 0, 0])
+        rotate([90 - stand_angle, 0, 0]) {
+color("Silver") bezel_top();
+color("Silver") bezel_bottom();
+color("Silver") bezel_left();
+color("Silver") bezel_right();        }
 

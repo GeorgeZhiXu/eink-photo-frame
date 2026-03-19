@@ -1,11 +1,30 @@
 // ============================================================
 // Base / Stand - Open-front box with angled cut
 //
-// Board is flipped (FPC bends backward), back edge faces back wall:
+// Side view:
+//          ╱────────────────────┐
+//         ╱                     │
+//        ╱  angled cut (12°)    │
+//       ╱                       │
+//      ╱                        │
+//     ╱shelf (panel sits here)  │
+//    ╱                          │
+//   ╱───────────────────────────┘
+//       desk surface
+//
+// - Open front: bottom bezel attaches to hold the panel
+// - Open top: lid is separate piece
+// - Left wall aligns with bezel left edge (room for battery connector)
+// - Angled cut at front creates 12° shelf for panel
+//
+// Board is flipped (components face down), back edge faces back wall:
 //   LEFT → [USB-C] [btn1] [btn2] [btn3] [reset] [off/on] → RIGHT
 //
 // Component heights from board surface (standoff top):
 //   USB-C: 3.2mm,  Buttons: 1.8mm,  Switch: 3.0mm
+//
+// Back wall cutouts (left to right):
+//   USB-C port (rounded rect) | 4 button holes | on/off switch slot
 // ============================================================
 include <common.scad>
 
@@ -13,47 +32,49 @@ module base_stand() {
     compartment_h = max(board_clearance + board_d, battery_d) + 5;
     base_h = base_wall + compartment_h;
 
-    // Left wall wider to accommodate board 1mm offset from display
-    left_ext = board_offset_x + tol;
-    base_w = cavity_w + left_ext;
+    // Left wall aligns with bezel left edge for battery connector room
+    // Extra space beyond cavity_w on the left side
+    left_ext = panel_rim + panel_inset;
+    base_w = frame_w;
 
     // Board position in base coords
-    board_x = base_wall;
-    // Y: front hole center at 18mm from base front edge (y=0)
-    // Front hole is at board_hole_edge_y from board front edge
-    board_y = 18 - board_hole_edge_y;
+    // board_x accounts for left extension so board stays aligned with display
+    board_x = left_ext + base_wall;
+    // Y: front hole center at 20mm from base front edge (y=0)
+    board_y = 20 - board_hole_edge_y;
 
     standoff_h = 6.2;   // tallest component ~5.8mm + 0.4mm clearance
     standoff_r = board_hole_dia / 2 + 0.8;
     screw_hole_r = board_hole_dia / 2;
     e = 0.01;
+    hole_tol = 0.8;
 
     // Component X positions from board left edge
     // (board is flipped, measured from left hole center)
     left_hole_from_edge = board_hole_edge_x;  // 2.4mm
-    usb_x   = left_hole_from_edge + 11.4;     // 13.8mm
-    btn1_x  = usb_x + 17.4;                   // 31.2mm
-    btn2_x  = btn1_x + 9.2;                   // 40.4mm
-    btn3_x  = btn2_x + 9.8;                   // 50.2mm
-    reset_x = btn3_x + 9.6;                   // 59.8mm
-    sw_off_x = reset_x + 9;                   // 68.8mm
-    sw_on_x  = reset_x + 11;                  // 70.8mm
+    usb_x   = left_hole_from_edge + 11.8;     // 13.8mm
+    btn1_x  = left_hole_from_edge + 28.8;                   // 31.2mm
+    btn2_x  = left_hole_from_edge + 38;                   // 40.4mm
+    btn3_x  = left_hole_from_edge + 47.4;                   // 50.2mm
+    reset_x = left_hole_from_edge + 57;                   // 59.8mm
+    sw_off_x = left_hole_from_edge + 65.6;                   // 68.8mm
+    sw_on_x  = left_hole_from_edge + 67.8;                  // 70.8mm
     sw_center_x = (sw_off_x + sw_on_x) / 2;  // 69.8mm
 
     // Component Z positions: board is upside down, components hang BELOW standoff top
     // Standoff top = board component-side surface
     board_surface_z = base_wall + standoff_h;
-    usb_z    = board_surface_z - 3.2;    // USB-C center: 3.2mm below board surface
-    btn_z    = board_surface_z - 1.8;    // button center: 1.8mm below board surface
-    switch_z = board_surface_z - 3.0;    // switch center: 3.0mm below board surface
+    usb_z    = board_surface_z - 2.9;    // USB-C center: 2.9mm below board surface
+    btn_z    = board_surface_z - 2.3;    // button center: 2.1mm below board surface
+    switch_z = board_surface_z - 2.7;    // switch center: 2.3mm below board surface
 
     // USB-C port (rounded rectangle / stadium shape)
-    usb_port_w = 8.94 + 0.8;   // standard + clearance
-    usb_port_h = 3.26 + 0.8;   // standard + clearance
+    usb_port_w = 8.94 + hole_tol;   // standard + clearance
+    usb_port_h = 3.26 + hole_tol;   // standard + clearance
     usb_port_r = usb_port_h / 2 - 0.01; // nearly fully rounded (avoid zero-height collapse)
 
     // Switch: 1.6mm square dial that slides between off and on positions
-    sw_dial = 1.6 + 0.4;   // dial size + clearance
+    sw_dial = 1.6 + hole_tol;   // dial size + clearance
     sw_travel = sw_on_x - sw_off_x;  // 2.2mm travel distance
     sw_slot_w = sw_travel + sw_dial;  // slot width = travel + dial
     sw_slot_h = sw_dial;              // slot height = dial size
@@ -61,11 +82,10 @@ module base_stand() {
     difference() {
         cube([base_w, stand_foot_depth, base_h]);
 
-        // 1. Angled cut at front
-        translate([left_ext, 0, 0])
-            rotate([-stand_angle, 0, 0])
-                translate([-left_ext - e, -stand_foot_depth, -base_h])
-                    cube([base_w + 2 * e, stand_foot_depth, base_h * 3]);
+        // 1. Angled cut at front (pivot at front-bottom edge)
+        rotate([-stand_angle, 0, 0])
+            translate([-e, -stand_foot_depth, -base_h])
+                cube([base_w + 2 * e, stand_foot_depth, base_h * 3]);
 
         // 2. Hollow interior (open front and top)
         translate([base_wall, -e, base_wall])
@@ -85,7 +105,7 @@ module base_stand() {
 
         // 4. Button holes (back wall) - btn1, btn2, btn3, reset
         // Actual buttons are 2.4mm round + clearance
-        btn_hole_d = 2.4 + 0.8;
+        btn_hole_d = 2.4 + hole_tol;
         button_xs = [btn1_x, btn2_x, btn3_x, reset_x];
         for (bx = button_xs) {
             translate([board_x + bx, stand_foot_depth - base_wall, btn_z])

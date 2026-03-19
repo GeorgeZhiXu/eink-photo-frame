@@ -62,7 +62,7 @@ bed_max = 260;
 
 /* [Stand Parameters] */
 stand_angle = 12;         // tilt angle in degrees
-stand_foot_depth = 58.6;  // board edge + 0.2mm clearance to back wall interior
+stand_foot_depth = 60.6;  // board edge + 0.2mm clearance to back wall interior
 
 /* [FPC Cable] */
 // 60-pin FPC exits from bottom of display, offset 2mm to the right
