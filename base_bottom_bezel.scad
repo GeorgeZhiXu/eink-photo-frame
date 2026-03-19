@@ -26,8 +26,9 @@ color("DimGray")
 color("Gold")
 //    translate([-panel_inset, 0, 0])
         rotate([90 - stand_angle, 0, 0]) {
-color("Silver") bezel_top();
+//color("Silver") bezel_top();
 color("Silver") bezel_bottom();
-color("Silver") bezel_left();
-color("Silver") bezel_right();        }
+//color("Silver") bezel_left();
+//color("Silver") bezel_right();        
+}
 

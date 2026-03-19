@@ -18,10 +18,6 @@ module base_lid() {
             translate([lip, lip, -lip])
                 cube([lid_w - 2 * lip, lid_h - 2 * lip, lip]);
         }
-
-        // Finger pull cutout
-        translate([lid_w / 2, lid_h / 2, -lip])
-            cylinder(d = 15, h = lid_d + lip, $fn = 30);
     }
 }
 

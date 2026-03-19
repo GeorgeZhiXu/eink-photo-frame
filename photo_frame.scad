@@ -26,7 +26,12 @@ use <base_lid.scad>
 color("DimGray")
     base_stand();
 
-// Tilted frame assembly
+// Lid on top of base compartment
+_compartment_h = max(board_clearance + board_d, battery_d) + 5;
+color("LightGray")
+    translate([base_wall + tol, tol, base_wall + _compartment_h + 1.2])
+        mirror([0, 0, 1])
+            base_lid();
 // In bezel coords: X=width, Y=height(bottom=0), Z=depth(back=0, front=max)
 // Step 1: rotate -90° around X to stand up (Y -> Z, Z -> -Y)
 // Step 2: rotate stand_angle around X to lean back
