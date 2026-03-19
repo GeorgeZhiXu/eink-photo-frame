@@ -28,7 +28,7 @@ color("Gold")
         rotate([90 - stand_angle, 0, 0]) {
 //color("Silver") bezel_top();
 color("Silver") bezel_bottom();
-//color("Silver") bezel_left();
-//color("Silver") bezel_right();        
+color("Silver") bezel_left();
+color("Silver") bezel_right();        
 }
 

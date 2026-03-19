@@ -183,9 +183,9 @@ module bezel_side(side) {
         difference() {
             // Solid frame: outer wall full height, bezel face on top
             union() {
-                rounded_rect(frame_w, frame_h, frame_d, corner_r);
+                rounded_rect(frame_w, frame_h, frame_d, corner_r, $fn = 180);
                 translate([0, 0, frame_d])
-                    rounded_rect(frame_w, frame_h, wall_thick, corner_r);
+                    rounded_rect(frame_w, frame_h, wall_thick, corner_r, $fn = 180);
             }
 
             // 1. Window opening
