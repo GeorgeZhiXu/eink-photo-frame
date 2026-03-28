@@ -41,7 +41,7 @@ module base_back_wall() {
     sw_center_x = (sw_off_x + sw_on_x) / 2;
 
     // Z positions in wall coords (wall bottom = base floor + base_wall)
-    board_surface_z = standoff_h;  // relative to wall bottom
+    board_surface_z = base_wall + standoff_h;  // relative to wall bottom
     usb_z    = board_surface_z - 2.9;
     btn_z    = board_surface_z - 2.3;
     switch_z = board_surface_z - 2.7;
