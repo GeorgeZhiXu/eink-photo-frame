@@ -35,9 +35,10 @@ usb_c_protrusion = 1.5;   // USB-C sticks out from board edge
 button_protrusion = 1.0;   // buttons stick out from board edge
 
 /* [Battery Parameters] */
-battery_w = 60;
-battery_h = 35;
-battery_d = 8;
+battery_w = 72;
+battery_h = 40;
+battery_d = 20;           // updated: actual battery is thicker than expected
+batterh_wire_d = 1.6;
 
 /* [Frame Parameters] */
 bezel_w    = 13.5;        // total visible bezel width (uniform, fits largest lip)
@@ -45,6 +46,8 @@ wall_thick = 1.2;         // front frame thickness
 back_thick = 1.2;         // back panel thickness (6 layers @ 0.2mm)
 cavity_tol = 0.85;        // clearance above display in cavity
 frame_d    = back_thick + display_d + cavity_tol;  // 2.6mm
+xy_tol     = 0.4;         // use line width as tol in xy direction
+z_tol      = 0.2;         // use line height as tol in z direction
 tol        = 0.2;         // glass to cavity clearance
 corner_r   = 3;
 
@@ -62,7 +65,7 @@ bed_max = 260;
 
 /* [Stand Parameters] */
 stand_angle = 12;         // tilt angle in degrees
-stand_foot_depth = 60.6;  // board edge + 0.2mm clearance to back wall interior
+stand_foot_depth = 64.6;  // board edge + 0.2mm clearance to back wall interior
 
 /* [FPC Cable] */
 // 60-pin FPC exits from bottom of display, offset 2mm to the right
@@ -88,7 +91,7 @@ screw_r       = 1.5;       // M3 screw radius
 
 // Per-side lip (derived from borders)
 // Use the largest border to set bezel_w, so all sides are uniform
-lip_bottom = border_bottom - visible_border;         // 10.3mm (largest)
+lip_bottom = lip_overlap;  // same as sides (bottom hidden by base, no need for large lip)
 
 // Bezel layout: outer_wall + 2*channel_tol + rim + lip = bezel_w
 // All sides use the same bezel_w (set to fit the largest lip)
@@ -96,12 +99,11 @@ lip_bottom = border_bottom - visible_border;         // 10.3mm (largest)
 channel_w   = bezel_w - outer_wall - lip_overlap;    // side/top channel
 panel_rim   = channel_w - 2 * channel_tol;           // side/top rim
 
-channel_w_bot = bezel_w - outer_wall - lip_bottom;   // bottom channel
-bottom_rim    = channel_w_bot - 2 * channel_tol;     // bottom rim
+bottom_rim    = panel_rim;  // same as other sides (thin rim was fragile)
 
 // Frame and cavity dimensions (uniform bezel_w on all sides)
-cavity_w = glass_w + 2 * tol;
-cavity_h = glass_h + 2 * tol;
+cavity_w = glass_w + 2 * xy_tol;
+cavity_h = glass_h + 2 * xy_tol;
 frame_w  = glass_w - 2 * lip_overlap + 2 * bezel_w;
 frame_h  = glass_h - lip_overlap - lip_bottom + 2 * bezel_w;
 
@@ -111,11 +113,13 @@ panel_h = cavity_h + panel_rim + bottom_rim;
 panel_inset = (frame_w - panel_w) / 2;
 
 // Back panel split: bottom piece as tall as fits the bed
-back_split_y = bed_max - 10;   // 250mm from bottom, top piece ~60mm
+back_split_y = bed_max - 20;   // 240mm from bottom, top piece ~50mm
 
 // Base dimensions (foot/stand only, attaches to bottom of back panel)
 base_wall = outer_wall;   // match bezel outer wall so they fuse at front
 base_total_depth = stand_foot_depth;
+
+$fn = 180;
 
 // ============================================================
 // Utility modules
@@ -216,10 +220,11 @@ module bezel_side(side) {
     }
 }
 
-// 45-degree miter cutting regions
-e = 1;
+
 
 module _miter_region(side) {
+    // 45-degree miter cutting regions
+    e = 1;
     if (side == "bottom")
         linear_extrude(50, center = true)
             polygon([[-e, -e], [frame_w + e, -e], [frame_w / 2, frame_w / 2]]);
@@ -240,22 +245,28 @@ module _miter_region(side) {
 // Full back panel (smaller than bezel, fits inside channel)
 module back_panel_full() {
     fpc_x = (panel_w - fpc_slot_w) / 2 + fpc_offset_x;
-    fpc_gap = 4;
+    echo(fpc_x);
     e = 0.01;  // epsilon for clean boolean cuts through boundary faces
 
+    // FPC tunnel: thin horizontal slot through rim and back wall
+    // Visible as a narrow slit on the back face and cavity side
+    // Prints without support (back face down, tunnel ceiling bridges 7.6mm)
+    fpc_window_h = 3.0;  // FPC ribbon ~0.3mm + clearance
+    fpc_window_z = back_thick;  // tunnel sits right on top of back wall
+
     difference() {
-        rounded_rect(panel_w, panel_h, frame_d, max(corner_r - panel_inset, 0.5));
+        rounded_rect(panel_w, panel_h, frame_d, max(corner_r - panel_inset, 0.5), $fn = 180);
 
         // Display cavity (cuts through top face at z=frame_d)
         translate([panel_rim, bottom_rim, back_thick])
             cube([cavity_w, cavity_h, frame_d - back_thick + e]);
 
-        // FPC cable exit slot (cuts through bottom edge at y=0 and top at z=frame_d)
-        translate([fpc_x, -e, back_thick])
-            cube([fpc_slot_w, bottom_rim + e, frame_d - back_thick + e]);
-
-        // FPC ribbon gap (cuts through bottom edge at y=0 and bottom face at z=0)
-        translate([fpc_x, -e, -e])
-            cube([fpc_slot_w, fpc_gap + e, frame_d + 2 * e]);
+        // Single tunnel from outside (y=-e) through rim into cavity (+2mm)
+        translate([fpc_x, bottom_rim, -e]) {
+            rotate([0, 90, 0])
+                cylinder(fpc_slot_w, fpc_window_h / 2, fpc_window_h / 2, false, $fn = 180);
+            cube([fpc_slot_w, fpc_window_h / 2, fpc_window_h / 2]);
+        }   
     }
 }
+

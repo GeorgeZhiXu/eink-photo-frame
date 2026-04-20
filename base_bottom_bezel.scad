@@ -18,7 +18,7 @@ _left_ext = board_offset_x + tol;  // base is wider on left by this amount
 // Panel cavity starts at panel_rim from panel left edge
 // So base left edge = panel_rim - _left_ext
 color("DimGray")
-//    translate([panel_rim - _left_ext, 0, 0])
+    translate([panel_rim - _left_ext, 0, 0])
         base_stand_combined();
 
 // Bottom bezel (frame_w wide) centered on panel

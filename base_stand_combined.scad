@@ -32,11 +32,11 @@ module base_stand_combined() {
     compartment_h = max(board_clearance + board_d, battery_d) + 5;
     base_h = base_wall + compartment_h;
 
-    left_ext = panel_rim + panel_inset;
-    base_w = frame_w;
+    left_ext = board_offset_x + batterh_wire_d + tol;
+    base_w = cavity_w + left_ext;
 
     board_x = left_ext + base_wall;
-    board_y = 20 - board_hole_edge_y;  // front hole center at 20mm from base front
+    board_y = 24 - board_hole_edge_y;  // front hole center at 20mm from base front
 
     standoff_h = 6.2;
     standoff_r = board_hole_dia / 2 + 0.8;
@@ -79,7 +79,7 @@ module base_stand_combined() {
             rotate([90, 0, 0])
                 translate([0, 0, -stand_foot_depth])
                     linear_extrude(stand_foot_depth)
-                        offset(r = corner_r, $fn = 180) offset(r = -corner_r)
+                        offset(r = corner_r) offset(r = -corner_r)
                             square([base_w, base_h]);
         }
 
@@ -100,7 +100,7 @@ module base_stand_combined() {
         translate([board_x + usb_x, stand_foot_depth - base_wall, usb_z])
             rotate([-90, 0, 0])
                 linear_extrude(base_wall + e)
-                    offset(r = usb_port_r, $fn = 180)
+                    offset(r = usb_port_r)
                         offset(r = -usb_port_r)
                             square([usb_port_w, usb_port_h], center = true);
 
@@ -110,7 +110,7 @@ module base_stand_combined() {
         for (bx = button_xs) {
             translate([board_x + bx, stand_foot_depth - base_wall, btn_z])
                 rotate([-90, 0, 0])
-                    cylinder(d = btn_hole_d, h = base_wall + e, $fn = 180);
+                    cylinder(d = btn_hole_d, h = base_wall + e);
         }
 
         // 5. On/off switch slot (back wall)
@@ -128,11 +128,29 @@ module base_stand_combined() {
         [board_hole_edge_x + board_hole_h, board_hole_edge_y + board_hole_v]
     ];
 
+    fillet_r = 2.5;  // fillet radius at standoff base
     for (pos = hole_positions) {
         translate([board_x + pos[0], board_y + pos[1], base_wall])
             difference() {
-                cylinder(r = standoff_r, h = standoff_h, $fn = 180);
-                cylinder(r = screw_hole_r, h = standoff_h + e, $fn = 180);
+                union() {
+                    // Main standoff cylinder
+                    cylinder(r = standoff_r, h = standoff_h);
+                    // Fillet: smooth taper from wider base to standoff diameter
+                    // Uses rotate_extrude of a quarter-circle profile
+                    rotate_extrude()
+                        translate([standoff_r, 0, 0])
+                            intersection() {
+                                square([fillet_r, fillet_r]);
+                                difference() {
+                                    square([fillet_r, fillet_r]);
+                                    translate([fillet_r, fillet_r])
+                                        circle(r = fillet_r);
+                                }
+                            }
+                }
+                // Screw hole through everything
+                translate([0, 0, -e])
+                    cylinder(r = screw_hole_r, h = standoff_h + fillet_r + 2 * e);
             }
     }
 }
